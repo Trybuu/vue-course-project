@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import jobsData from '@/jobs.json'
-import { ref, defineProps } from 'vue'
+import { reactive, defineProps, onMounted } from 'vue'
 import JobListing from './JobListing.vue'
 import { RouterLink } from 'vue-router'
+import axios from 'axios'
 
 interface Company {
   name: string
@@ -25,7 +26,22 @@ withDefaults(defineProps<{ limit: number; showButton: boolean }>(), {
   showButton: false,
 })
 
-const jobs = ref<Job[]>(jobsData)
+// const jobs = ref<Job[]>([])
+const state = reactive<{ jobs: Job[] | []; isLoading: boolean }>({
+  jobs: [],
+  isLoading: true,
+})
+
+onMounted(async () => {
+  try {
+    const response = await axios.get('http://localhost:5000/jobs')
+    state.jobs = response.data
+  } catch (error) {
+    console.error('Error while fetching data', error)
+  } finally {
+    state.isLoading = false
+  }
+})
 </script>
 
 <template>
@@ -36,7 +52,7 @@ const jobs = ref<Job[]>(jobsData)
       </h2>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <JobListing
-          v-for="job of jobs.slice(0, limit || jobs.length)"
+          v-for="job of state.jobs.slice(0, limit || state.jobs.length)"
           :key="job.id"
           :job="job"
         />
